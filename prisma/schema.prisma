@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String  @db.Text
+  price       Decimal @db.Decimal(10, 2)
+  quantity    Int     @default(0)
+  imageUrl    String
+  status      String
+}
+
+model TbStockList {
+  id               Int      @id @default(autoincrement())
+  store_id         String
+  transaction_date String
+  supply           String
+  stock_code       String
+  stock_name       String
+  tax_yn           String
+  specification    String
+  unit             String
+  qty              String
+  unit_price       String
+  amount           String
+  status           String
+  from_store       String
+  created_by       String
+  created_at       DateTime @default(now())
+}
+
+model TbStoreProduct {
+  id            Int    @id @default(autoincrement())
+  stock_code    String
+  stock_name    String
+  specification String
+  unit          String
+}
