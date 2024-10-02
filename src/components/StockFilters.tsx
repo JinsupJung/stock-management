@@ -16,6 +16,7 @@ export default function StockFilters() {
   const router = useRouter();
   const { selectedStore, setSelectedStore } = useStores();
 
+
   // Use SelectChangeEvent from Material UI to fix the typing error
   const handleStoreSelect = (event: SelectChangeEvent<string>) => {
     const selectedStore = stores.find((store) => store.store_code === event.target.value);
@@ -23,6 +24,7 @@ export default function StockFilters() {
       setSelectedStore(selectedStore);
     }
   };
+
 
   return (
     <Box
@@ -67,14 +69,6 @@ export default function StockFilters() {
             ))}
           </Select>
         </FormControl>
-
-        {/* {selectedStore && ( */}
-        {/* <Box sx={{ mt: 3 }}> */}
-        {/* <Typography variant="subtitle1">Selected Store:</Typography> */}
-        {/* <Typography>Store Code: {selectedStore.store_code}</Typography> */}
-        {/* <Typography>{selectedStore.store_name}</Typography> */}
-        {/* </Box> */}
-        {/* )} */}
       </Box>
 
       <Box
@@ -88,8 +82,9 @@ export default function StockFilters() {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: { xs: 2, md: 0 }, width: { xs: '100%', sm: 'auto' } }}>
-          직영 사입 관리 - 직영 선택 후 사입 등록 버튼을 눌러주세요
+          직영 사입 관리
         </Typography>
+
         <Button
           variant="contained"
           onClick={() => router.push('/buy/stock/add')}
@@ -104,6 +99,9 @@ export default function StockFilters() {
           사입 등록
         </Button>
       </Box>
+
+      직영선택 후 사입 등록 버튼을 눌러주세요
+
     </Box>
   );
 }

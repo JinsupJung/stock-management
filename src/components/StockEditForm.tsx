@@ -1,94 +1,98 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
+import Image from 'next/image';
+import { IconButton } from '@mui/material';
+import {
+  Box,
+  Button,
+  InputAdornment,
+  InputLabel,
+  OutlinedInput,
+  TextField,
+  FormControl,
+  Typography,
+  Autocomplete,
+} from '@mui/material';
 import { useSession } from 'next-auth/react'; // For session user
-import { Box, Button, TextField, Typography, Autocomplete, FormControl, MenuItem, Select, InputLabel, SelectChangeEvent } from '@mui/material';
 import { useStores } from '@/context/StoresContext'; // Custom context for selected store
-import { DatePicker } from '@mui/x-date-pickers/DatePicker'; // Date picker component from MUI
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
+
 import axios from 'axios';
-import { stores, suppliers } from '@/constants/stores'
+
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 
-interface StockData {
-  store_id: string;
-  transaction_date: string | Date;
-  supply: string;
-  stock_code: string;
-  stock_name: string;
-  tax_yn: string;
-  specification: string;
-  unit: string;
-  qty: number | '';
-  unit_price: number | '';
-  amount: number | '';
-  status: string;
-  created_by: string;
-  trans_no: number | '';
-  accu_qty: number | '';
+interface StockEditFormProps {
+  stock: {
+    id: number;
+    store_id: string;
+    transaction_date: string | Date;
+    supply: string;
+    stock_code: string;
+    stock_name: string;
+    tax_yn: string;
+    specification: string;
+    unit: string;
+    qty: number | '';
+    unit_price: number | '';
+    amount: number | '';
+    status: string;
+    from_store: string;
+    created_by: string;
+  };
 }
+
+// Predefined supplier list (Dropdown options)
+const suppliers = [
+  "본사", "웰스토리", "본사소모품", "웰스토리소모품", "봄맛푸드소모품",
+  "우리와인", "고성주류", "서린주류", "퐁당수산", "제주더플러스", "봄맛푸드",
+  "누리미트", "기대상사", "미트맨", "강남유통", "삼성", "외부사입", "원천주류",
+  "의창실업", "금성", "원하나", "복주", "파낙스", "마루", "대농마트"
+];
 
 interface StoreProduct {
   stock_code: string;
   stock_name: string;
   specification: string;
   unit: string;
-  conversion_weight: number | '';
-  tax_type: String;
-  product_type: String;
-  purchase_cost: number | '';
-  supply_price_type: string;
-  branch_price: number | '';
-  franchise_price: number | '';
-  other_price: number | '';
-  storage_type: string;
-  expiration_period: string;
-  related_department: string;
-  management_product: string;
-  logo_product: string;
-  livestock_product: string;
-  optimal_stock_qty: number | '';
-  ars: string;
-  is_active: string;
-  supplier: string;
 }
 
-// Predefined supplier list (Dropdown options)
-// const suppliers = [
-//   "본사", "본사소모품", "웰스토리", "웰스토리소모품", "봄맛푸드", "봄맛푸드소모품",
-//   "우리와인", "고성주류", "서린주류", "퐁당수산", "제주더플러스",
-//   "누리미트", "기대상사", "미트맨", "강남유통", "삼성", "외부사입", "원천주류",
-//   "의창실업", "금성", "원하나", "복주", "파낙스", "마루", "대농마트"
-// ];
-
-export default function StockBuyForm() {
+export default function StockEditForm({ stock }: StockEditFormProps) {
   const { data: session } = useSession(); // Fetch session data
   const { selectedStore } = useStores(); // Use store context for store_id
-  const [fields, setFields] = React.useState<StockData>({
-    store_id: selectedStore?.store_code || '', // Read only from context
-    transaction_date: new Date(), // Default to today
-    supply: '',
-    stock_code: '',
-    stock_name: '',
-    tax_yn: '',
-    specification: '',
-    unit: '',
-    qty: '',
-    unit_price: '',
-    amount: '',
-    status: '',
-    created_by: session?.user?.name || '', // Session name
-    trans_no: '',
-    accu_qty: '',
-  });
-
-  const [isManualAmount, setIsManualAmount] = useState(false); // Track manual amount input
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
+  const [isManualAmount, setIsManualAmount] = useState(false); // Track manual amount input
   const [loading, setLoading] = useState(false);
 
-  // Fetch products
+  // Use a single state object to manage the stock details
+  const [formState, setFormState] = useState({
+    id: stock.id,
+    store_id: stock.store_id,
+    transaction_date: stock.transaction_date,
+    supply: stock.supply,
+    stock_code: stock.stock_code,
+    stock_name: stock.stock_name,
+    specification: stock.specification,
+    unit: stock.unit,
+    qty: stock.qty,
+    unit_price: stock.unit_price,
+    amount: stock.amount,
+    status: stock.status,
+    from_store: stock.from_store,
+    created_by: session?.user?.name || stock.created_by,
+  });
+
+  const store_name = selectedStore?.store_name || ''; // Read only from context
+
+
+  // console.log("StockEditForm formState=", formState);
+
+
+  // Fetch 품목 마스터
   useEffect(() => {
     const fetchStoreProducts = async () => {
       setLoading(true);
@@ -105,74 +109,90 @@ export default function StockBuyForm() {
     fetchStoreProducts();
   }, []);
 
-  // Handle field changes
-  const handleChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = evt.target;
-    const parsedValue = value === '' ? '' : parseFloat(value);
 
-    setFields((prevFields) => ({
-      ...prevFields,
-      [name]: name === 'qty' || name === 'unit_price' ? parsedValue : value,
-    }));
-
-    if (name === 'qty' || name === 'unit_price') {
-      setIsManualAmount(false); // Reset to auto-calculate amount if qty or unit_price is modified
-    }
-  };
-
-  const handleSupplySelect = (event: any, newValue: string | null) => {
-    setFields({
-      ...fields,
-      supply: newValue || '',
-    });
-  };
 
   const handleStockSelect = (event: any, newValue: StoreProduct | null) => {
     if (newValue) {
-      setFields({
-        ...fields,
-        stock_code: newValue.stock_code || '',
-        stock_name: newValue.stock_name || 'Unnamed Product',
-        specification: newValue.specification || '',
-        unit: newValue.unit || '',
-      });
+      setFormState((prevState) => ({
+        ...prevState,
+        stock_code: newValue.stock_code,
+        stock_name: newValue.stock_name,
+        specification: newValue.specification,
+        unit: newValue.unit,
+      }));
     }
   };
 
-  const handleDateChange = (date: Dayjs | null) => {
-    setFields({
-      ...fields,
-      transaction_date: date?.format('YYYY-MM-DD') || '',
-    });
+  // Handle field changes
+  const handleChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = evt.target;
+
+    const parsedValue = value === '' ? '' : Number(value); // Ensure we handle empty values correctly
+
+    setFormState((prevState) => ({
+      ...prevState,
+      [name]: name === 'qty' || name === 'unit_price' ? Number(value) : value,
+    }));
+
+    // Check if 'qty' or 'unit_price' is being updated to reset auto-calculation
+    if (name === 'qty' || name === 'unit_price') {
+      setIsManualAmount(false);
+    }
   };
 
-  // Auto-calculate amount unless it's manually edited
+  // Auto-recalculate amount if not manually edited
   useEffect(() => {
-    if (fields.qty && fields.unit_price && !isManualAmount) {
-      const calculatedAmount = parseFloat(fields.qty.toString()) * parseFloat(fields.unit_price.toString());
-      setFields((prevFields) => ({
+    if (formState.qty && formState.unit_price && !isManualAmount) {
+      const calculatedAmount = parseFloat(formState.qty.toString()) * parseFloat(formState.unit_price.toString());
+      setFormState((prevFields) => ({
         ...prevFields,
         amount: calculatedAmount || '',
       }));
     }
-  }, [fields.qty, fields.unit_price, isManualAmount]);
+  }, [formState.qty, formState.unit_price, isManualAmount]);
 
-  // Handle manual amount change
+
+  // Handle manual changes to the amount
   const handleAmountChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
-    const value = evt.target.value === '' ? '' : parseFloat(evt.target.value); // Convert to number or keep as empty string
-    setFields((prevFields) => ({
-      ...prevFields,
+    const value = evt.target.value === '' ? '' : Number(evt.target.value); // Convert to number or empty string
+    setFormState((prevState) => ({
+      ...prevState,
       amount: value,
     }));
     setIsManualAmount(true); // Mark amount as manually edited
   };
 
+  const handleSupplySelect = (event: any, newValue: string | null) => {
+    setFormState((prevState) => ({
+      ...prevState,
+      supply: newValue || '',
+    }));
+  };
+
+  const handleDateChange = (date: Dayjs | null) => {
+    setFormState((prevState) => ({
+      ...prevState,
+      transaction_date: date?.format('YYYY-MM-DD') || '',
+    }));
+  };
+
+  // const handleSubmit = (evt: React.FormEvent<HTMLFormElement>) => {
+  //   evt.preventDefault();
+
+  //   const formData = new FormData();
+  //   Object.entries(formState).forEach(([key, value]) => {
+  //     formData.append(key, value.toString());
+  //   });
+
+  //   actions.stockEdit(formData);
+  // };
 
   return (
     <>
-      <form action="/api/buy" method="POST" encType="multipart/form-data">
+      {/* <form onSubmit={handleSubmit}> */}
+      <form action="/api/stock" method="POST" encType="multipart/form-data">
         <Box sx={{ borderBottom: '1px dashed #c8cdd3', pb: 1, display: 'flex' }}>
-          <Typography variant="h5" fontWeight="bold">직영 사입 기록</Typography>
+          <Typography variant="h5" fontWeight="bold">자재 내용 수정</Typography>
         </Box>
 
         <Box sx={{ my: 5, display: 'flex', flexWrap: 'wrap' }}>
@@ -183,6 +203,10 @@ export default function StockBuyForm() {
             borderRadius: '0.25rem',
             width: { xs: '100%', sm: '100%', md: '66.667%' },
           }}>
+
+
+            <input type="hidden" name="id" value={stock.id} />
+
             {/* Store ID (read-only) */}
             <TextField
               label="매장코드"
@@ -191,7 +215,7 @@ export default function StockBuyForm() {
               sx={{ marginBottom: '0.8em' }}
               id="store_id"
               name="store_id"
-              value={fields.store_id}
+              value={stock.store_id}
               InputProps={{ readOnly: true }}
             />
             <TextField
@@ -209,7 +233,7 @@ export default function StockBuyForm() {
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ko">
               <DatePicker
                 label="거래일"
-                value={dayjs(fields.transaction_date)}
+                value={dayjs(stock.transaction_date)}
                 onChange={handleDateChange}
                 slotProps={{
                   textField: { fullWidth: true, sx: { marginBottom: '2.4em' } }
@@ -218,17 +242,32 @@ export default function StockBuyForm() {
             </LocalizationProvider>
 
             {/* Hidden field for transaction_date */}
-            <input
+            {/* <input
               type="hidden"
               name="transaction_date"
-              value={typeof fields.transaction_date === 'string'
-                ? fields.transaction_date
-                : fields.transaction_date.toISOString().split('T')[0]} // Convert Date to YYYY-MM-DD string format 
+              value={
+                !isNaN(Date.parse(stock.transaction_date))
+                  ? new Date(stock.transaction_date).toISOString().split('T')[0] // Convert string to Date and format
+                  : stock.transaction_date // Use the original string if it's not a valid date
+              }
+            /> */}
+
+            <TextField
+              type="hidden"
+              name="transaction_date"
+              value={
+                typeof stock.transaction_date === 'string' && !isNaN(Date.parse(stock.transaction_date))
+                  ? new Date(stock.transaction_date).toISOString().split('T')[0] // Convert string to formatted date string
+                  : typeof stock.transaction_date === 'string'
+                    ? stock.transaction_date // Use the original string if it's not a valid date
+                    : '' // Handle other cases (like if transaction_date is a Date object)
+              }
             />
 
             {/* Supply Autocomplete */}
             <Autocomplete
               options={suppliers}
+              value={formState.supply} // Make sure the initial value is set here
               onChange={(event, newValue) => handleSupplySelect(event, newValue)}
               renderInput={(params) => (
                 <TextField
@@ -241,11 +280,12 @@ export default function StockBuyForm() {
               )}
             />
             {/* Hidden input to ensure the value is submitted */}
-            <input type="hidden" name="supply" value={fields.supply} />
+            <input type="hidden" name="supply" value={stock.supply} />
 
             {/* Product Autocomplete */}
             <Autocomplete
               options={storeProducts}
+              value={storeProducts.find(product => product.stock_code === formState.stock_code) || null} // Match based on stock_code
               getOptionLabel={(option) => option.stock_name || ''}
               onChange={(event, newValue) => handleStockSelect(event, newValue)}
               renderInput={(params) => (
@@ -254,8 +294,8 @@ export default function StockBuyForm() {
             />
 
             {/* Hidden input to ensure the value is submitted */}
-            <input type="hidden" name="stock_code" value={fields.stock_code} />
-            <input type="hidden" name="stock_name" value={fields.stock_name} />
+            <input type="hidden" name="stock_code" value={stock.stock_code} />
+            <input type="hidden" name="stock_name" value={stock.stock_name} />
 
             {/* Auto-populated fields */}
             <TextField
@@ -265,7 +305,7 @@ export default function StockBuyForm() {
               sx={{ marginBottom: '0.8em' }}
               id="stock_code"
               name="stock_code"
-              value={fields.stock_code}
+              value={stock.stock_code}
               InputProps={{ readOnly: true }}
             />
             <TextField
@@ -275,7 +315,7 @@ export default function StockBuyForm() {
               sx={{ marginBottom: '0.8em' }}
               id="specification"
               name="specification"
-              value={fields.specification}
+              value={stock.specification}
               InputProps={{ readOnly: true }}
             />
             <TextField
@@ -285,7 +325,7 @@ export default function StockBuyForm() {
               sx={{ marginBottom: '0.8em' }}
               id="unit"
               name="unit"
-              value={fields.unit}
+              value={stock.unit}
               InputProps={{ readOnly: true }}
             />
 
@@ -299,7 +339,7 @@ export default function StockBuyForm() {
               sx={{ marginBottom: '0.8em' }}
               id="qty"
               name="qty"
-              value={fields.qty}
+              value={formState.qty}
               onChange={handleChange}
             />
 
@@ -313,7 +353,7 @@ export default function StockBuyForm() {
               sx={{ marginBottom: '0.8em' }}
               id="unit_price"
               name="unit_price"
-              value={fields.unit_price}
+              value={formState.unit_price}
               onChange={handleChange}
             />
 
@@ -325,7 +365,7 @@ export default function StockBuyForm() {
               sx={{ marginBottom: '0.8em' }}
               id="amount"
               name="amount"
-              value={fields.amount}
+              value={formState.amount}
               onChange={handleAmountChange} // Allow manual change of amount
             />
 
@@ -337,7 +377,7 @@ export default function StockBuyForm() {
               sx={{ marginBottom: '0.8em' }}
               id="created_by"
               name="created_by"
-              value={fields.created_by}
+              value={stock.created_by}
               InputProps={{ readOnly: true }}
             />
           </Box>
@@ -356,7 +396,7 @@ export default function StockBuyForm() {
             저장
           </Button>
         </Box>
-      </form>
+      </form >
     </>
   );
 }

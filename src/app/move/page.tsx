@@ -12,39 +12,41 @@ interface StockProps {
     tax_yn: string;
     specification: string;
     unit: string;
-    qty: string;
-    unit_price: string;
-    amount: string;
+    qty: number;
+    unit_price: number;
+    amount: number;
     status: string;
     from_store: string;
     created_by: string;
+    trans_no: number;
+    accu_qty: number;
+}
+
+
+interface StoreStockProps {
+    id: number;
+    store_id: string;
+    stock_code: string;
+    stock_name: string;
+    current_qty: number;
 }
 
 export default async function MoveDashboardPage() {
-    const stocks: StockProps[] = await db.tbStockList.findMany();
+    // const stocks: StockProps[] = await db.tbStockList.findMany();
+    const storeStocks: StoreStockProps[] = await db.tbStoreStock.findMany();
 
-    const stockData: StockProps[] = stocks.map((stock) => ({
-        id: stock.id,
-        store_id: stock.store_id,
-        transaction_date: stock.transaction_date,
-        supply: stock.supply,
-        stock_code: stock.stock_code,
-        stock_name: stock.stock_name,
-        tax_yn: stock.tax_yn,
-        specification: stock.specification,
-        unit: stock.unit,
-        qty: stock.qty,
-        unit_price: stock.unit_price,
-        amount: stock.amount,
-        status: stock.status,
-        from_store: stock.from_store,
-        created_by: stock.created_by,
+    const storeStockData: StoreStockProps[] = storeStocks.map((storeStock) => ({
+        id: storeStock.id,
+        store_id: storeStock.store_id,
+        stock_code: storeStock.stock_code,
+        stock_name: storeStock.stock_name,
+        current_qty: storeStock.current_qty,
     }));
 
     return (
         <>
             <StockMoveFilters />
-            <StockMoveListTable stocks={stockData} />
+            <StockMoveListTable stocks={storeStockData} />
         </>
     );
 }

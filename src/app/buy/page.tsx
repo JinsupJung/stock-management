@@ -2,6 +2,7 @@ import { db } from '@/db';
 import StockFilters from '@/components/StockFilters';
 import StockListTable from '@/components/StockListTable';
 
+
 interface StockProps {
     id: number;
     store_id: string;
@@ -12,15 +13,19 @@ interface StockProps {
     tax_yn: string;
     specification: string;
     unit: string;
-    qty: string;
-    unit_price: string;
-    amount: string;
+    qty: number;
+    unit_price: number;
+    amount: number;
     status: string;
     from_store: string;
     created_by: string;
+    trans_no: number;
+    accu_qty: number;
 }
 
 export default async function BuyDashboardPage() {
+
+    // 그리드에 표시할 데이터
     const stocks: StockProps[] = await db.tbStockList.findMany();
 
     const stockData: StockProps[] = stocks.map((stock) => ({
@@ -39,6 +44,8 @@ export default async function BuyDashboardPage() {
         status: stock.status,
         from_store: stock.from_store,
         created_by: stock.created_by,
+        trans_no: stock.trans_no,
+        accu_qty: stock.accu_qty,
     }));
 
     return (

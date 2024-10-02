@@ -24,19 +24,11 @@ interface StockData {
   from_store: string;
 }
 
-interface StoreStockData {
-  id: number;
-  store_id: string;
-  stock_code: string;
-  stock_name: string;
-  current_qty: number;
+interface StockListTableProps {
+  stocks?: StockData[]; // Make this prop optional and ensure it's always an array.
 }
 
-interface StockMoveListTableProps {
-  stocks?: StoreStockData[]; // Make this prop optional and ensure it's always an array.
-}
-
-export default function StockMoveListTable({ stocks = [] }: StockMoveListTableProps) {
+export default function StockInvenListTable({ stocks = [] }: StockListTableProps) {
 
   const { selectedStore } = useStores(); // Use store context for store_id
 
@@ -59,6 +51,21 @@ export default function StockMoveListTable({ stocks = [] }: StockMoveListTablePr
 
   const columns: GridColDef[] = [
     {
+      field: 'store_id',
+      headerName: '매장코드',
+      width: 120,
+    },
+    {
+      field: 'transaction_date',
+      headerName: '거래일자',
+      width: 120,
+    },
+    {
+      field: 'supply',
+      headerName: '공급자',
+      width: 120,
+    },
+    {
       field: 'stock_code',
       headerName: '품목코드',
       width: 120,
@@ -68,38 +75,38 @@ export default function StockMoveListTable({ stocks = [] }: StockMoveListTablePr
       headerName: '품목명',
       width: 150,
     },
-    // {
-    //   field: 'specification',
-    //   headerName: '규격',
-    //   width: 130,
-    // },
-    // {
-    //   field: 'unit',
-    //   headerName: '단위',
-    //   width: 130,
-    // },
-    // {
-    //   field: 'unit_price',
-    //   headerName: '단가',
-    //   width: 130,
-    // },
     {
-      field: 'current_qty',
-      headerName: '현재수량',
+      field: 'specification',
+      headerName: '규격',
       width: 130,
     },
-    // {
-    //   field: 'amount',
-    //   headerName: '금액',
-    //   width: 130,
-    // },
+    {
+      field: 'unit',
+      headerName: '단위',
+      width: 130,
+    },
+    {
+      field: 'unit_price',
+      headerName: '단가',
+      width: 130,
+    },
+    {
+      field: 'qty',
+      headerName: '수량',
+      width: 130,
+    },
+    {
+      field: 'amount',
+      headerName: '금액',
+      width: 130,
+    },
     {
       field: 'actions',
       headerName: 'Actions',
       width: 121,
       renderCell: (params: GridCellParams) => (
         <>
-          <Link href={`/move/stock/${params.id}/move`}>
+          <Link href={`/admin/product/${params.id}/move`}>
             <TrendingFlatIcon
               style={{
                 fontSize: '1.4rem',
@@ -123,37 +130,22 @@ export default function StockMoveListTable({ stocks = [] }: StockMoveListTablePr
     <>
       <DataGrid
         rows={rows}
-        columns={columns.map((column, index) => ({
-          ...column,
-          width: index === 1 ? (column.width || 100) * 4 : column.width, // 2번째 열의 너비를 2배로 설정
-          align: typeof column.field === 'string' ? 'center' : 'right', // 문자: 가운데 정렬, 숫자: 오른쪽 정렬
-          headerAlign: typeof column.field === 'string' ? 'center' : 'right', // 헤더도 같은 방식으로 정렬
-        }))}
+        columns={columns}
         initialState={{
           pagination: {
-            paginationModel: { page: 0, pageSize: 20 },
+            paginationModel: { page: 0, pageSize: 5 },
           },
         }}
         sx={{
-          height: 720, // DataGrid의 높이 설정
+          height: 400, // Ensure the height is passed as a number
           width: '100%',
           backgroundColor: '#fff',
           paddingLeft: '10px',
           paddingRight: '10px',
           boxShadow: 2,
           borderRadius: '0.25rem',
-          border: '1px solid #ccc',  // 외곽 박스선 추가
-          '& .MuiDataGrid-cell': {
-            borderRight: '1px solid rgba(224, 224, 224, 1)', // 세로선 스타일 지정 (열 구분)
-            padding: '0 8px',  // 셀의 padding 설정
-          },
-          '& .MuiDataGrid-columnHeader': {
-            borderRight: '1px solid rgba(224, 224, 224, 1)',  // 헤더에 세로선 추가
-          },
         }}
-        rowHeight={30}  // Row의 기본 높이 조정
-        // headerHeight={40}  // 헤더의 기본 높이 설정
-        pageSizeOptions={[10, 20]}
+      // pageSizeOptions={[10, 20]}
       />
     </>
   );

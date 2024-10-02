@@ -1,7 +1,6 @@
 import { db } from '@/db';
-import { TbStockList } from '@prisma/client';
-import StockFilters from '@/components/StockFilters';
-import StockListTable from '@/components/StockListTable';
+import StockInvenFilters from '@/components/StockInvenFilters';
+import StockInvenListTable from '@/components/StockInvenListTable';
 
 interface StockProps {
     id: number;
@@ -13,12 +12,14 @@ interface StockProps {
     tax_yn: string;
     specification: string;
     unit: string;
-    qty: string;
-    unit_price: string;
-    amount: string;
+    qty: number;
+    unit_price: number;
+    amount: number;
     status: string;
     from_store: string;
     created_by: string;
+    trans_no: number;
+    accu_qty: number;
 }
 
 export default async function BuyDashboardPage() {
@@ -40,12 +41,14 @@ export default async function BuyDashboardPage() {
         status: stock.status,
         from_store: stock.from_store,
         created_by: stock.created_by,
+        trans_no: stock.trans_no,
+        accu_qty: stock.accu_qty,
     }));
 
     return (
         <>
-            <StockFilters />
-            <StockListTable stocks={stockData} />
+            <StockInvenFilters />
+            <StockInvenListTable stocks={stockData} />
         </>
     );
 }

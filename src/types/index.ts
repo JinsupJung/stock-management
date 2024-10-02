@@ -18,10 +18,12 @@ export interface StockData {
   tax_yn: string;
   specification: string;
   unit: string;
-  qty: string;
-  unit_price: string;
-  amount: string;
+  qty: number;
+  unit_price: number;
+  amount: number;
   status: string;
   created_by: string;
   from_store: string;
+  trans_no: number;
+  accu_qty: number;
 }

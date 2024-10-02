@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/db';
 
-const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
     try {
         // tbStoreProduct 테이블에서 모든 데이터 조회
-        const products = await prisma.tbStoreProduct.findMany();
+        const products = await db.tbStoreProduct.findMany();
 
         // const products = [
         //     { stock_code: 'P001', stock_name: 'Product 1', specification: 'Spec 1', unit: 'Unit 1' },

@@ -13,16 +13,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Product {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String  @db.Text
-  price       Decimal @db.Decimal(10, 2)
-  quantity    Int     @default(0)
-  imageUrl    String
-  status      String
-}
-
 model TbStockList {
   id               Int      @id @default(autoincrement())
   store_id         String
@@ -33,19 +23,47 @@ model TbStockList {
   tax_yn           String
   specification    String
   unit             String
-  qty              String
-  unit_price       String
-  amount           String
+  qty              Int // Changed from String to Int
+  unit_price       Int
+  amount           Int
   status           String
   from_store       String
   created_by       String
   created_at       DateTime @default(now())
+  trans_no         Int
+  accu_qty         Int
 }
 
 model TbStoreProduct {
-  id            Int    @id @default(autoincrement())
-  stock_code    String
-  stock_name    String
-  specification String
-  unit          String
+  // id                 Int     @id @default(autoincrement())
+  stock_code         String  @unique
+  stock_name         String
+  specification      String
+  unit               String
+  conversion_weight  Decimal
+  tax_type           String
+  product_type       String
+  purchase_cost      Decimal
+  supply_price_type  String
+  branch_price       Decimal
+  franchise_price    Decimal
+  other_price        Decimal
+  storage_type       String
+  expiration_period  String
+  related_department String
+  management_product String
+  logo_product       String
+  livestock_product  String
+  optimal_stock_qty  Int
+  ars                String
+  is_active          String
+  supplier           String
+}
+
+model TbStoreStock {
+  id          Int    @id @default(autoincrement())
+  store_id    String
+  stock_code  String
+  stock_name  String
+  current_qty Int
 }

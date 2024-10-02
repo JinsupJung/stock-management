@@ -1,90 +1,180 @@
-'use client'
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react'; // For session user
-import { useStores } from '@/context/StoresContext'; // Custom context for selected store
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs, { Dayjs } from 'dayjs';
-import axios from 'axios';
-
 import {
   Box,
   Button,
+  InputAdornment,
+  InputLabel,
+  OutlinedInput,
   TextField,
+  FormControl,
   Typography,
-  Autocomplete
+  Autocomplete,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@mui/material';
+import { useStores } from '@/context/StoresContext'; // Custom context for selected store
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs, { Dayjs } from 'dayjs';
+import axios from 'axios';
+import { stores, suppliers } from '@/constants/stores'
 
-import * as actions from '@/actions';
 
 interface StockMoveFormProps {
   stock: {
     id: number;
     store_id: string;
-    transaction_date: string;
-    supply: string;
     stock_code: string;
     stock_name: string;
-    tax_yn: string;
-    specification: string;
-    unit: string;
-    qty: string;
-    unit_price: string;
-    amount: string;
-    status: string;
-    from_store: string;
-    created_by: string;
+    current_qty: number | '';
   };
 }
+
 
 interface StoreProduct {
   stock_code: string;
   stock_name: string;
   specification: string;
   unit: string;
+  conversion_weight: number | '';
+  tax_type: String;
+  product_type: String;
+  purchase_cost: number | '';
+  supply_price_type: string;
+  branch_price: number | '';
+  franchise_price: number | '';
+  other_price: number | '';
+  storage_type: string;
+  expiration_period: string;
+  related_department: string;
+  management_product: string;
+  logo_product: string;
+  livestock_product: string;
+  optimal_stock_qty: number | '';
+  ars: string;
+  is_active: string;
+  supplier: string;
 }
 
-// Predefined supplier list (Dropdown options)
-const suppliers = [
-  "본사", "웰스토리", "본사소모품", "웰스토리소모품", "봄맛푸드소모품",
-  "우리와인", "고성주류", "서린주류", "퐁당수산", "제주더플러스", "봄맛푸드",
-  "누리미트", "기대상사", "미트맨", "강남유통", "삼성", "외부사입", "원천주류",
-  "의창실업", "금성", "원하나", "복주", "파낙스", "마루", "대농마트"
-];
 
 export default function StockMoveForm({ stock }: StockMoveFormProps) {
   const { data: session } = useSession(); // Fetch session data
-  const { selectedStore } = useStores(); // Use store context for store_id
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isManualAmount, setIsManualAmount] = useState(false); // Track manual amount input
+  const [loading, setLoading] = useState(false);
+  const { selectedStore, setSelectedStore } = useStores();
 
-  // Use a single state object to manage the stock details
+  // TbStoreStock 기록용
   const [formState, setFormState] = useState({
+    id: stock.id,
     store_id: stock.store_id,
-    transaction_date: stock.transaction_date,
-    supply: stock.supply,
+    supply: '',
+    store_name: '',
     stock_code: stock.stock_code,
     stock_name: stock.stock_name,
-    specification: stock.specification,
-    unit: stock.unit,
-    qty: stock.qty,
-    unit_price: stock.unit_price,
-    amount: stock.amount,
-    status: stock.status,
-    from_store: stock.from_store,
-    created_by: session?.user?.name || stock.created_by,
+    specificaton: '',
+    unit: '',
+    current_qty: stock.current_qty,
+    transaction_date: dayjs().format('YYYY-MM-DD'), // 초기값은 'YYYY-MM-DD' 형식의 문자열
+    created_by: session?.user?.name || '', // Session name
   });
 
   const store_name = selectedStore?.store_name || ''; // Read only from context
 
-  // Fetch products
+  const [formData, setFormData] = useState({
+    newRecord: {
+      id: stock.id,
+      store_id: stock.store_id,
+      // transaction_date: formState.transaction_date,
+      // supply: formState.supply,
+      stock_code: stock.stock_code,
+      stock_name: stock.stock_name,
+      // specification: formState.specification,
+      // unit: formState.unit,
+      qty: stock.current_qty,
+      // unit_price: formState.unit_price,
+      // amount: formState.amount,
+      status: 'move',
+      from_store: stock.store_id,
+      created_by: session?.user?.name || '',
+    },
+    updateRecord: {
+      id: stock.id,
+      qty: stock.current_qty,
+      // amount: formState.amount,
+    }
+  });
+
+
+  console.log("Move Form TbStockList =", formData);
+
+  // 저장 버튼 클릭
+  const handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
+    evt.preventDefault();
+
+
+    // alert("submit button");
+
+    const formData = new FormData();
+    formData.append('store_id', formState.store_id);
+    formData.append('transaction_date', formState.transaction_date.toString());
+    formData.append('supply', '');
+    formData.append('stock_code', formState.stock_code);
+    formData.append('stock_name', formState.stock_name);
+    formData.append('specification', '');
+    formData.append('unit', '');
+    formData.append('qty', String(formState.current_qty));
+    formData.append('unit_price', '');
+    formData.append('amount', '');
+    formData.append('from_store', stock.store_id);
+    formData.append('created_by', formState.created_by);
+
+    // Update record details
+    formData.append('id', String(formState.id));
+    formData.append('qty', String(formState.current_qty));
+    formData.append('amount', '');
+
+    alert(formData);
+
+    console.log("formData = ", formData.get('from_store'));
+
+    try {
+      const response = await fetch('/api/move', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Perform a client-side redirect using Next.js router
+          window.location.href = '/move'; // Redirect after successful operation
+        } else {
+          console.error('Operation failed:', result.message);
+        }
+      } else {
+        console.error('Failed to submit form');
+      }
+    } catch (error) {
+      console.error('Error submitting the form:', error);
+    }
+  };
+
+
+  // console.log("StockEditForm formState=", formState);
+
+
+  // Fetch 품목 마스터
   useEffect(() => {
     const fetchStoreProducts = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`/api/buy/master`);
+        const response = await axios.get(`/api/master`);
         setStoreProducts(response.data);
       } catch (error) {
         console.error('Failed to fetch store products', error);
@@ -95,6 +185,8 @@ export default function StockMoveForm({ stock }: StockMoveFormProps) {
 
     fetchStoreProducts();
   }, []);
+
+
 
   const handleStockSelect = (event: any, newValue: StoreProduct | null) => {
     if (newValue) {
@@ -108,34 +200,27 @@ export default function StockMoveForm({ stock }: StockMoveFormProps) {
     }
   };
 
-  const handleSubmit = (evt: React.FormEvent<HTMLFormElement>) => {
-    evt.preventDefault();
+  // 매장 선택 핸들러
+  const handleStoreSelect = (event: SelectChangeEvent<string>) => {
+    const selectedToStore = stores.find((store) => store.id === event.target.value);
 
-    const formData = new FormData();
-    Object.entries(formState).forEach(([key, value]) => {
-      formData.append(key, value.toString());
-    });
-
-    actions.stockMove(formData);
+    if (selectedToStore) {
+      // 선택된 매장의 store_id와 store_name을 상태로 업데이트
+      setFormState((prevState) => ({
+        ...prevState,
+        store_id: selectedToStore.id,  // 이동할 매장의 ID 설정
+        store_name: selectedToStore.name,  // 선택한 매장의 이름 설정
+      }));
+    }
   };
 
-  const handleDateChange = (date: Dayjs | null) => {
-    setFormState((prevState) => ({
-      ...prevState,
-      transaction_date: date?.format('YYYY-MM-DD') || '',
-    }));
-  };
-
-  const handleSupplySelect = (event: any, newValue: string | null) => {
-    setFormState((prevState) => ({
-      ...prevState,
-      supply: newValue || '',
-    }));
-  };
 
   // Handle field changes
   const handleChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = evt.target;
+
+    const parsedValue = value === '' ? '' : Number(value); // Ensure we handle empty values correctly
+
     setFormState((prevState) => ({
       ...prevState,
       [name]: name === 'qty' || name === 'unit_price' ? Number(value) : value,
@@ -147,20 +232,54 @@ export default function StockMoveForm({ stock }: StockMoveFormProps) {
     }
   };
 
+  // Handle manual changes to the amount
   const handleAmountChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const value = evt.target.value === '' ? '' : Number(evt.target.value); // Convert to number or empty string
     setFormState((prevState) => ({
       ...prevState,
-      amount: evt.target.value,
+      amount: value,
     }));
     setIsManualAmount(true); // Mark amount as manually edited
+  };
+
+  const handleSupplySelect = (event: any, newValue: string | null) => {
+    setFormState((prevState) => ({
+      ...prevState,
+      supply: newValue || '',
+    }));
+  };
+
+
+  // 날짜 변경 핸들러 (Dayjs 객체를 받아 문자열로 변환)
+  const handleDateChange = (date: Dayjs | null) => {
+    if (date) {
+      setFormState({
+        ...formState,
+        transaction_date: date.format('YYYY-MM-DD'), // 문자열로 저장
+      });
+    }
+  };
+  const handleQtyChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const inputQty = Number(evt.target.value);
+
+    if (inputQty > Number(stock.current_qty)) {
+      alert('현재고량 보다 클 수 없습니다.');
+      return;
+    }
+
+    setFormState((prevState) => ({
+      ...prevState,
+      current_qty: inputQty,
+    }));
   };
 
 
   return (
     <>
       <form onSubmit={handleSubmit}>
+        {/* <form action="/api/move" method="POST" encType="multipart/form-data"> */}
         <Box sx={{ borderBottom: '1px dashed #c8cdd3', pb: 1, display: 'flex' }}>
-          <Typography variant="h5" fontWeight="bold">매장 재고 이동</Typography>
+          <Typography variant="h5" fontWeight="bold">재고 매장 이동</Typography>
         </Box>
 
         <Box sx={{ my: 5, display: 'flex', flexWrap: 'wrap' }}>
@@ -171,36 +290,59 @@ export default function StockMoveForm({ stock }: StockMoveFormProps) {
             borderRadius: '0.25rem',
             width: { xs: '100%', sm: '100%', md: '66.667%' },
           }}>
+            {/* 매장 선택 드롭다운 */}
+            <FormControl fullWidth variant="outlined" sx={{ mt: 2, marginBottom: '0.8em' }}>
+              <InputLabel id="store-select-label">이동할 매장 선택</InputLabel>
+              <Select
+                labelId="store-select-label"
+                id="store-select"
+                value={formState.store_id}
+                onChange={handleStoreSelect}
+                label="이동할 매장 선택"
+              >
+                {stores
+                  .filter((store) => store.id !== selectedStore?.store_code)  // 현재 매장을 제외한 다른 매장만 표시
+                  .map((store) => (
+                    <MenuItem key={store.id} value={store.id}>
+                      {store.name}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
+
+
             {/* Store ID (read-only) */}
             <TextField
-              label="매장코드"
+              label="이동할 매장코드"
               fullWidth
               required
-              sx={{ marginBottom: '1.2em' }}
+              sx={{ marginBottom: '0.8em' }}
               id="store_id"
               name="store_id"
+              value={formState.store_id}
+              InputProps={{ readOnly: true }}
+            />
+
+            <TextField
+              label="현재 매장 코드"
+              fullWidth
+              required
+              sx={{ marginBottom: '0.8em' }}
+              id="from_store"
+              name="from_store"
               value={stock.store_id}
               InputProps={{ readOnly: true }}
             />
-            <TextField
-              label="매장명"
-              fullWidth
-              required
-              sx={{ marginBottom: '1.2em' }}
-              id="store_name"
-              name="store_name"
-              value={selectedStore?.store_name || ''}
-              InputProps={{ readOnly: true }}
-            />
+            <input type="hidden" name="from_store" value={stock.store_id} />
 
             {/* Transaction Date (Date Picker) */}
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ko">
               <DatePicker
                 label="거래일"
-                value={dayjs(stock.transaction_date)}
+                value={dayjs(formState.transaction_date)} // 문자열을 Dayjs 객체로 변환하여 DatePicker에 전달
                 onChange={handleDateChange}
                 slotProps={{
-                  textField: { fullWidth: true, sx: { marginBottom: '2.4em' } }
+                  textField: { fullWidth: true, sx: { marginBottom: '2.4em' } },
                 }}
               />
             </LocalizationProvider>
@@ -209,73 +351,29 @@ export default function StockMoveForm({ stock }: StockMoveFormProps) {
             <input
               type="hidden"
               name="transaction_date"
-              value={
-                !isNaN(Date.parse(stock.transaction_date))
-                  ? new Date(stock.transaction_date).toISOString().split('T')[0] // Convert string to Date and format
-                  : stock.transaction_date // Use the original string if it's not a valid date
-              }
+              value={formState.transaction_date} // 이미 'YYYY-MM-DD' 형식으로 저장된 값을 그대로 사용
             />
 
-            {/* Supply Autocomplete */}
-            <Autocomplete
-              options={suppliers}
-              onChange={(event, newValue) => handleSupplySelect(event, newValue)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="공급자"
-                  fullWidth
-                  required
-                  sx={{ marginBottom: '1.2em' }}
-                />
-              )}
+            <TextField
+              label="품명"
+              fullWidth
+              required
+              sx={{ marginBottom: '0.8em' }}
+              id="stock_name"
+              name="stock_name"
+              value={stock.stock_name}
+              InputProps={{ readOnly: true }}
             />
-            {/* Hidden input to ensure the value is submitted */}
-            <input type="hidden" name="supply" value={stock.supply} />
-
-            {/* Product Autocomplete */}
-            <Autocomplete
-              options={storeProducts}
-              getOptionLabel={(option) => option.stock_name || ''}
-              onChange={(event, newValue) => handleStockSelect(event, newValue)}
-              renderInput={(params) => (
-                <TextField {...params} label="품명" fullWidth required sx={{ marginBottom: '1.2em' }} />
-              )}
-            />
-
-            {/* Hidden input to ensure the value is submitted */}
-            <input type="hidden" name="stock_code" value={stock.stock_code} />
-            <input type="hidden" name="stock_name" value={stock.stock_name} />
 
             {/* Auto-populated fields */}
             <TextField
               label="품목코드"
               fullWidth
               required
-              sx={{ marginBottom: '1.2em' }}
+              sx={{ marginBottom: '0.8em' }}
               id="stock_code"
               name="stock_code"
               value={stock.stock_code}
-              InputProps={{ readOnly: true }}
-            />
-            <TextField
-              label="규격"
-              fullWidth
-              required
-              sx={{ marginBottom: '1.2em' }}
-              id="specification"
-              name="specification"
-              value={stock.specification}
-              InputProps={{ readOnly: true }}
-            />
-            <TextField
-              label="단위"
-              fullWidth
-              required
-              sx={{ marginBottom: '1.2em' }}
-              id="unit"
-              name="unit"
-              value={stock.unit}
               InputProps={{ readOnly: true }}
             />
 
@@ -286,52 +384,15 @@ export default function StockMoveForm({ stock }: StockMoveFormProps) {
               fullWidth
               inputProps={{ min: '0' }}
               required
-              sx={{ marginBottom: '1.4em' }}
-              id="qty"
-              name="qty"
-              value={stock.qty}
-              onChange={handleChange}
-            />
-
-            {/* Unit Price */}
-            <TextField
-              type="number"
-              label="단가"
-              fullWidth
-              inputProps={{ min: '0' }}
-              required
-              sx={{ marginBottom: '1.4em' }}
-              id="unit_price"
-              name="unit_price"
-              value={stock.unit_price}
-              onChange={handleChange}
-            />
-
-            {/* Amount */}
-            <TextField
-              label="금액"
-              fullWidth
-              required
-              sx={{ marginBottom: '1.2em' }}
-              id="amount"
-              name="amount"
-              value={stock.amount}
-              onChange={handleAmountChange} // Allow manual change of amount
-            />
-
-            {/* Created By */}
-            <TextField
-              label="기록자"
-              fullWidth
-              required
-              sx={{ marginBottom: '1.2em' }}
-              id="created_by"
-              name="created_by"
-              value={stock.created_by}
-              InputProps={{ readOnly: true }}
+              sx={{ marginBottom: '0.8em' }}
+              id="current_qty"
+              name="current_qty"
+              value={formState.current_qty}
+              onChange={handleQtyChange}
             />
           </Box>
         </Box>
+
 
         <Box sx={{ textAlign: 'end' }}>
           <Button
@@ -346,7 +407,7 @@ export default function StockMoveForm({ stock }: StockMoveFormProps) {
             저장
           </Button>
         </Box>
-      </form>
+      </form >
     </>
   );
 }

@@ -12,7 +12,9 @@ const stores = [
   { store_code: '000158', store_name: '놀부청담직영점' },
 ];
 
-export default function MoveStockFilters() {
+
+// 월말 재고 조사
+export default function StockInvenFilters() {
   const router = useRouter();
   const { selectedStore, setSelectedStore } = useStores();
 
@@ -88,7 +90,7 @@ export default function MoveStockFilters() {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: { xs: 2, md: 0 }, width: { xs: '100%', sm: 'auto' } }}>
-          재고 매장간 이동
+          직영 사입 관리 - 직영 선택 후 매장이동 아이콘을 눌러주세요
         </Typography>
         {/* <Button
           variant="contained"
@@ -104,7 +106,6 @@ export default function MoveStockFilters() {
           매장 재고 이동
         </Button> */}
       </Box>
-      직영 선택 후 매장이동 아이콘을 눌러주세요
     </Box>
   );
 }
