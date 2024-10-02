@@ -32,7 +32,7 @@ interface StockListTableProps {
   stocks?: StockData[]; // Make this prop optional and ensure it's always an array.
 }
 
-export default function StockListTable({ stocks = [] }: StockListTableProps) {
+export default function StockBuyListTable({ stocks = [] }: StockListTableProps) {
 
   const { selectedStore } = useStores(); // Use store context for store_id
 

@@ -3,51 +3,34 @@
 import * as React from 'react';
 import { DataGrid, GridColDef, GridCellParams } from '@mui/x-data-grid';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+
 import Link from 'next/link';
 import { useStores } from '@/context/StoresContext'; // Custom context for selected store
 
 
-interface StockData {
+interface InvenData {
   id: number;
   store_id: string;
-  transaction_date: string;
-  supply: string;
   stock_code: string;
   stock_name: string;
-  tax_yn: string;
-  specification: string;
-  unit: string;
   qty: number;
-  unit_price: number;
-  amount: number;
-  status: string;
-  from_store: string;
+  transaction_date: string;
 }
 
-interface StockListTableProps {
-  stocks?: StockData[]; // Make this prop optional and ensure it's always an array.
+interface InvenListTableProps {
+  invens?: InvenData[]; // Make this prop optional and ensure it's always an array.
 }
 
-export default function StockInvenListTable({ stocks = [] }: StockListTableProps) {
+export default function InvenListTable({ invens = [] }: InvenListTableProps) {
 
   const { selectedStore } = useStores(); // Use store context for store_id
-
-
-
-  // const handleDelete = (id: number) => {
-  //   actions.productDelete(id);
-  // };
-
-  // const rows = stocks; // Ensure that `rows` is always an array (even if empty).
-  // Filter stocks by the selected store
   const selectedStoreId = selectedStore?.store_code || ''; // Read only from context
   const filteredStocks = selectedStoreId
-    ? stocks.filter((stock) => stock.store_id === selectedStoreId)
-    : stocks;
+    ? invens.filter((inven) => inven.store_id === selectedStoreId)
+    : invens;
 
   const rows = filteredStocks.map(stock => ({ ...stock, id: stock.id.toString() })); // Ensure that `id` is a string
-
-  // const rows = stocks; // Ensure that `rows` is always an array (even if empty).
 
   const columns: GridColDef[] = [
     {
@@ -57,12 +40,7 @@ export default function StockInvenListTable({ stocks = [] }: StockListTableProps
     },
     {
       field: 'transaction_date',
-      headerName: '거래일자',
-      width: 120,
-    },
-    {
-      field: 'supply',
-      headerName: '공급자',
+      headerName: '실사일자',
       width: 120,
     },
     {
@@ -76,28 +54,8 @@ export default function StockInvenListTable({ stocks = [] }: StockListTableProps
       width: 150,
     },
     {
-      field: 'specification',
-      headerName: '규격',
-      width: 130,
-    },
-    {
-      field: 'unit',
-      headerName: '단위',
-      width: 130,
-    },
-    {
-      field: 'unit_price',
-      headerName: '단가',
-      width: 130,
-    },
-    {
       field: 'qty',
       headerName: '수량',
-      width: 130,
-    },
-    {
-      field: 'amount',
-      headerName: '금액',
       width: 130,
     },
     {
@@ -106,8 +64,8 @@ export default function StockInvenListTable({ stocks = [] }: StockListTableProps
       width: 121,
       renderCell: (params: GridCellParams) => (
         <>
-          <Link href={`/admin/product/${params.id}/move`}>
-            <TrendingFlatIcon
+          <Link href={`/inven/stock/${params.id}/edit`}>
+            <EditOutlinedIcon
               style={{
                 fontSize: '1.4rem',
                 color: 'rgb(112 112 113)',
@@ -130,7 +88,16 @@ export default function StockInvenListTable({ stocks = [] }: StockListTableProps
     <>
       <DataGrid
         rows={rows}
-        columns={columns}
+
+        columns={columns.map((column, index) => ({
+          ...column,
+          width: index === 3 ? (column.width || 100) * 4 : column.width, // 2번째 열의 너비를 2배로 설정
+          align: typeof column.field === 'string' ? 'center' : 'right', // 문자: 가운데 정렬, 숫자: 오른쪽 정렬
+          headerAlign: typeof column.field === 'string' ? 'center' : 'right', // 헤더도 같은 방식으로 정렬
+        }))}
+
+
+
         initialState={{
           pagination: {
             paginationModel: { page: 0, pageSize: 5 },

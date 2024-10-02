@@ -1,6 +1,6 @@
 import { db } from '@/db';
-import StockFilters from '@/components/StockFilters';
-import StockListTable from '@/components/StockListTable';
+import StockBuyFilters from '@/components/StockBuyFilters';
+import StockBuyListTable from '@/components/StockBuyListTable';
 
 
 interface StockProps {
@@ -50,8 +50,8 @@ export default async function BuyDashboardPage() {
 
     return (
         <>
-            <StockFilters />
-            <StockListTable stocks={stockData} />
+            <StockBuyFilters />
+            <StockBuyListTable stocks={stockData} />
         </>
     );
 }

@@ -67,3 +67,13 @@ model TbStoreStock {
   stock_name  String
   current_qty Int
 }
+
+model TbStoreInven {
+  id               Int    @id @default(autoincrement())
+  store_id         String
+  stock_code       String
+  stock_name       String
+  qty              Int
+  transaction_date String
+  created_by       String
+}

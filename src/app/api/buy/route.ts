@@ -47,9 +47,6 @@ export const POST = async (req: Request) => {
       accu_qty,
     };
 
-    // console.log("tax_yn =", tax_yn);
-    console.log("id =", id);
-    console.log("POST stockData", stockData);
 
     // Check if the `id` is provided to determine if it's an update or insert
     if (id) {

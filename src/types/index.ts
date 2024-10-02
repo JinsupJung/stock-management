@@ -27,3 +27,12 @@ export interface StockData {
   trans_no: number;
   accu_qty: number;
 }
+
+export interface InvenData {
+  store_id: string;
+  transaction_date: string | Date;
+  stock_code: string;
+  stock_name: string;
+  qty: number | '';
+  created_by: string;
+}

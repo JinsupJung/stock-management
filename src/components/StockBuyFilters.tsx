@@ -12,7 +12,7 @@ const stores = [
   { store_code: '000158', store_name: '놀부청담직영점' },
 ];
 
-export default function StockFilters() {
+export default function StockBuyFilters() {
   const router = useRouter();
   const { selectedStore, setSelectedStore } = useStores();
 
