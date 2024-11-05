@@ -75,10 +75,15 @@ export default function StockBuyListTable({ stocks = [] }: StockListTableProps) 
       width: 150,
     },
     {
-      field: 'accu_qty',
-      headerName: '누적수량',
+      field: 'tax_yn',
+      headerName: '과세/면세',
       width: 150,
     },
+    // {
+    //   field: 'accu_qty',
+    //   headerName: '누적수량',
+    //   width: 150,
+    // },
     {
       field: 'specification',
       headerName: '규격',

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import {
-  Box, Button, TextField, Typography, Autocomplete, FormControl, MenuItem, Select, InputLabel, SelectChangeEvent,
+  Box, Button, TextField, Typography, Autocomplete,
 } from '@mui/material';
 import { useStores } from '@/context/StoresContext';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -11,11 +11,10 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 import axios from 'axios';
-import { stores, suppliers } from '@/constants/stores';
 
 interface InvenData {
   store_id: string;
-  transaction_date: string | Date;
+  transaction_date: string;
   stock_code: string;
   stock_name: string;
   qty: number | '';
@@ -52,7 +51,7 @@ export default function StockInvenForm() {
   const { selectedStore } = useStores(); // Use store context for store_id
   const [formData, setformData] = React.useState<InvenData>({
     store_id: selectedStore?.store_code || '', // Read only from context
-    transaction_date: new Date(), // Default to today
+    transaction_date: dayjs().format('YYYY-MM-DD'), // Default to today
     stock_code: '',
     stock_name: '',
     qty: '',
@@ -62,13 +61,32 @@ export default function StockInvenForm() {
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Utility function to convert Decimal fields to numbers
+  const convertDecimalFields = (data: any): any => {
+    if (Array.isArray(data)) {
+      return data.map(convertDecimalFields);
+    } else if (data && typeof data === 'object') {
+      const newObj: any = {};
+      for (const key in data) {
+        if (data[key] && data[key]._isDecimal) {
+          newObj[key] = parseFloat(data[key].toString());
+        } else {
+          newObj[key] = convertDecimalFields(data[key]);
+        }
+      }
+      return newObj;
+    }
+    return data;
+  };
+
   // Fetch products
   useEffect(() => {
     const fetchStoreProducts = async () => {
       setLoading(true);
       try {
         const response = await axios.get(`/api/master`);
-        setStoreProducts(response.data);
+        const convertedData = convertDecimalFields(response.data);
+        setStoreProducts(convertedData);
       } catch (error) {
         console.error('Failed to fetch store products', error);
       } finally {
@@ -100,10 +118,10 @@ export default function StockInvenForm() {
     }
   };
 
-  const handleDateChange = (date: Dayjs | null) => {
+  const handleDateChange = (date: dayjs.Dayjs | null) => {
     setformData({
       ...formData,
-      transaction_date: date?.format('YYYY-MM-DD') || '',
+      transaction_date: date ? date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
     });
   };
 
@@ -131,6 +149,7 @@ export default function StockInvenForm() {
 
       if (response.ok) {
         alert('재고 실사 기록이 성공적으로 저장되었습니다.');
+        window.location.href = '/inven'; // Redirect after successful operation
       } else if (response.status === 400) {
         alert('동일한 매장 및 품목이 이미 존재합니다. 다시 입력해 주세요.');
       } else {
@@ -141,7 +160,6 @@ export default function StockInvenForm() {
       alert('서버와의 통신 중 오류가 발생했습니다.');
     }
   };
-
 
   return (
     <>
@@ -232,7 +250,7 @@ export default function StockInvenForm() {
               type="number"
               label="수량"
               fullWidth
-              inputProps={{ min: '0' }}
+              inputProps={{ min: '0', step: 'any' }}
               required
               sx={{ marginBottom: '0.8em' }}
               id="qty"

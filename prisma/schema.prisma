@@ -23,7 +23,7 @@ model TbStockList {
   tax_yn           String
   specification    String
   unit             String
-  qty              Int // Changed from String to Int
+  qty              Decimal 
   unit_price       Int
   amount           Int
   status           String
@@ -65,7 +65,7 @@ model TbStoreStock {
   store_id    String
   stock_code  String
   stock_name  String
-  current_qty Int
+  current_qty Decimal
 }
 
 model TbStoreInven {
@@ -73,7 +73,7 @@ model TbStoreInven {
   store_id         String
   stock_code       String
   stock_name       String
-  qty              Int
+  qty              Decimal
   transaction_date String
   created_by       String
 }

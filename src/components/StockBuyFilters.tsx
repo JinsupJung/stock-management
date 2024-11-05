@@ -82,7 +82,7 @@ export default function StockBuyFilters() {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: { xs: 2, md: 0 }, width: { xs: '100%', sm: 'auto' } }}>
-          직영 사입 관리
+          직영 매입 관리
         </Typography>
 
         <Button
@@ -96,11 +96,11 @@ export default function StockBuyFilters() {
             '&:hover': { backgroundColor: 'hsla(185, 64%, 29%, 1.0)' },
           }}
         >
-          사입 등록
+          매입 등록
         </Button>
       </Box>
 
-      직영선택 후 사입 등록 버튼을 눌러주세요
+      직영선택 후 매입 등록 버튼을 눌러주세요
 
     </Box>
   );

@@ -1,17 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-
-import Image from 'next/image';
-import { IconButton } from '@mui/material';
 import {
   Box,
   Button,
-  InputAdornment,
-  InputLabel,
-  OutlinedInput,
   TextField,
-  FormControl,
   Typography,
   Autocomplete,
 } from '@mui/material';
@@ -19,27 +12,21 @@ import { useSession } from 'next-auth/react'; // For session user
 import { useStores } from '@/context/StoresContext'; // Custom context for selected store
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs, { Dayjs } from 'dayjs';
-
+import dayjs from 'dayjs';
 import axios from 'axios';
-
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { stores, suppliers } from '@/constants/stores'
-
 
 interface StockEditFormProps {
   stock: {
     id: number;
     store_id: string;
-    transaction_date: string | Date;
+    transaction_date: string;
     stock_code: string;
     stock_name: string;
     qty: number | '';
     created_by: string;
   };
 }
-
-
 
 interface StoreProduct {
   stock_code: string;
@@ -49,13 +36,12 @@ interface StoreProduct {
 }
 
 export default function StockEditForm({ stock }: StockEditFormProps) {
-  const { data: session } = useSession(); // Fetch session data
-  const { selectedStore } = useStores(); // Use store context for store_id
+  const { data: session } = useSession(); // 세션 데이터 가져오기
+  const { selectedStore } = useStores(); // 매장 정보 가져오기
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
-  const [isManualAmount, setIsManualAmount] = useState(false); // Track manual amount input
   const [loading, setLoading] = useState(false);
 
-  // Use a single state object to manage the stock details
+  // 상태 초기화
   const [formState, setFormState] = useState({
     id: stock.id,
     store_id: stock.store_id,
@@ -66,19 +52,34 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
     created_by: session?.user?.name || stock.created_by,
   });
 
-  const store_name = selectedStore?.store_name || ''; // Read only from context
+  const store_name = selectedStore?.store_name || ''; // 읽기 전용 매장명
 
+  // Decimal 필드를 숫자로 변환하는 유틸리티 함수
+  const convertDecimalFields = (data: any): any => {
+    if (Array.isArray(data)) {
+      return data.map(convertDecimalFields);
+    } else if (data && typeof data === 'object') {
+      const newObj: any = {};
+      for (const key in data) {
+        if (data[key] && data[key]._isDecimal) {
+          newObj[key] = parseFloat(data[key].toString());
+        } else {
+          newObj[key] = convertDecimalFields(data[key]);
+        }
+      }
+      return newObj;
+    }
+    return data;
+  };
 
-  // console.log("StockEditForm formState=", formState);
-
-
-  // Fetch 품목 마스터
+  // 품목 마스터 데이터 가져오기
   useEffect(() => {
     const fetchStoreProducts = async () => {
       setLoading(true);
       try {
         const response = await axios.get(`/api/master`);
-        setStoreProducts(response.data);
+        const convertedData = convertDecimalFields(response.data);
+        setStoreProducts(convertedData);
       } catch (error) {
         console.error('Failed to fetch store products', error);
       } finally {
@@ -88,8 +89,6 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
 
     fetchStoreProducts();
   }, []);
-
-
 
   const handleStockSelect = (event: any, newValue: StoreProduct | null) => {
     if (newValue) {
@@ -101,32 +100,63 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
     }
   };
 
-  // Handle field changes
+  // 필드 변경 처리
   const handleChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = evt.target;
-
-    const parsedValue = value === '' ? '' : Number(value); // Ensure we handle empty values correctly
+    const parsedValue = value === '' ? '' : parseFloat(value);
 
     setFormState((prevState) => ({
       ...prevState,
-      [name]: name === 'qty' ? Number(value) : value,
+      [name]: name === 'qty' ? parsedValue : value,
     }));
-
   };
 
-
-  const handleDateChange = (date: Dayjs | null) => {
+  // 날짜 변경 처리
+  const handleDateChange = (date: dayjs.Dayjs | null) => {
     setFormState((prevState) => ({
       ...prevState,
-      transaction_date: date?.format('YYYY-MM-DD') || '',
+      transaction_date: date ? date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
     }));
   };
 
+  // 폼 제출 처리 함수
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // 기본 폼 제출 방지
+
+    const formDataToSend = {
+      id: formState.id,
+      store_id: formState.store_id,
+      transaction_date: formState.transaction_date,
+      stock_code: formState.stock_code,
+      stock_name: formState.stock_name,
+      qty: formState.qty.toString(),
+      created_by: formState.created_by,
+    };
+
+    try {
+      const response = await fetch('/api/inven', {
+        method: 'PUT', // 업데이트 요청이므로 PUT 메서드 사용
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formDataToSend), // JSON 형식으로 데이터 전송
+      });
+
+      if (response.ok) {
+        alert('재고 실사 기록이 성공적으로 수정되었습니다.');
+        window.location.href = '/inven'; // 수정 후 페이지 이동
+      } else {
+        alert('재고 실사 수정 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Error updating record:', error);
+      alert('서버와의 통신 중 오류가 발생했습니다.');
+    }
+  };
 
   return (
     <>
-      {/* <form onSubmit={handleSubmit}> */}
-      <form action="/api/inven" method="POST" encType="multipart/form-data">
+      <form onSubmit={handleSubmit}>
         <Box sx={{ borderBottom: '1px dashed #c8cdd3', pb: 1, display: 'flex' }}>
           <Typography variant="h5" fontWeight="bold">자재 내용 수정</Typography>
         </Box>
@@ -140,10 +170,10 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
             width: { xs: '100%', sm: '100%', md: '66.667%' },
           }}>
 
+            {/* 숨겨진 필드: id */}
+            <input type="hidden" name="id" value={formState.id} />
 
-            <input type="hidden" name="id" value={stock.id} />
-
-            {/* Store ID (read-only) */}
+            {/* 매장코드 (읽기 전용) */}
             <TextField
               label="매장코드"
               fullWidth
@@ -151,7 +181,7 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
               sx={{ marginBottom: '0.8em' }}
               id="store_id"
               name="store_id"
-              value={stock.store_id}
+              value={formState.store_id}
               InputProps={{ readOnly: true }}
             />
             <TextField
@@ -161,15 +191,15 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
               sx={{ marginBottom: '0.8em' }}
               id="store_name"
               name="store_name"
-              value={selectedStore?.store_name || ''}
+              value={store_name}
               InputProps={{ readOnly: true }}
             />
 
-            {/* Transaction Date (Date Picker) */}
+            {/* 거래일 (Date Picker) */}
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ko">
               <DatePicker
                 label="거래일"
-                value={dayjs(stock.transaction_date)}
+                value={dayjs(formState.transaction_date)}
                 onChange={handleDateChange}
                 slotProps={{
                   textField: { fullWidth: true, sx: { marginBottom: '2.4em' } }
@@ -177,45 +207,22 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
               />
             </LocalizationProvider>
 
-            {/* Hidden field for transaction_date */}
-            {/* <input
-              type="hidden"
-              name="transaction_date"
-              value={
-                !isNaN(Date.parse(stock.transaction_date))
-                  ? new Date(stock.transaction_date).toISOString().split('T')[0] // Convert string to Date and format
-                  : stock.transaction_date // Use the original string if it's not a valid date
-              }
-            /> */}
-
-            <TextField
-              type="hidden"
-              name="transaction_date"
-              value={
-                typeof stock.transaction_date === 'string' && !isNaN(Date.parse(stock.transaction_date))
-                  ? new Date(stock.transaction_date).toISOString().split('T')[0] // Convert string to formatted date string
-                  : typeof stock.transaction_date === 'string'
-                    ? stock.transaction_date // Use the original string if it's not a valid date
-                    : '' // Handle other cases (like if transaction_date is a Date object)
-              }
-            />
-
-            {/* Product Autocomplete */}
+            {/* 품명 선택 (Autocomplete) */}
             <Autocomplete
               options={storeProducts}
-              value={storeProducts.find(product => product.stock_code === formState.stock_code) || null} // Match based on stock_code
+              value={storeProducts.find(product => product.stock_code === formState.stock_code) || null}
               getOptionLabel={(option) => option.stock_name || ''}
-              onChange={(event, newValue) => handleStockSelect(event, newValue)}
+              onChange={handleStockSelect}
               renderInput={(params) => (
                 <TextField {...params} label="품명" fullWidth required sx={{ marginBottom: '0.8em' }} />
               )}
             />
 
-            {/* Hidden input to ensure the value is submitted */}
-            <input type="hidden" name="stock_code" value={stock.stock_code} />
-            <input type="hidden" name="stock_name" value={stock.stock_name} />
+            {/* 숨겨진 입력: stock_code, stock_name */}
+            <input type="hidden" name="stock_code" value={formState.stock_code} />
+            <input type="hidden" name="stock_name" value={formState.stock_name} />
 
-            {/* Auto-populated fields */}
+            {/* 품목코드 (자동 입력) */}
             <TextField
               label="품목코드"
               fullWidth
@@ -223,15 +230,16 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
               sx={{ marginBottom: '0.8em' }}
               id="stock_code"
               name="stock_code"
-              value={stock.stock_code}
+              value={formState.stock_code}
               InputProps={{ readOnly: true }}
             />
-            {/* Quantity */}
+
+            {/* 수량 입력 */}
             <TextField
               type="number"
               label="수량"
               fullWidth
-              inputProps={{ min: '0' }}
+              inputProps={{ min: '0', step: 'any' }}
               required
               sx={{ marginBottom: '0.8em' }}
               id="qty"
@@ -240,7 +248,7 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
               onChange={handleChange}
             />
 
-            {/* Created By */}
+            {/* 기록자 */}
             <TextField
               label="기록자"
               fullWidth
@@ -248,7 +256,7 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
               sx={{ marginBottom: '0.8em' }}
               id="created_by"
               name="created_by"
-              value={stock.created_by}
+              value={formState.created_by}
               InputProps={{ readOnly: true }}
             />
           </Box>
@@ -267,7 +275,7 @@ export default function StockEditForm({ stock }: StockEditFormProps) {
             저장
           </Button>
         </Box>
-      </form >
+      </form>
     </>
   );
 }

@@ -52,7 +52,7 @@ export default function AppContainer({ children }: { children: React.ReactNode }
 
   const drawerLinks = [
     {
-      name: '직영 사입 관리',
+      name: '직영 매입 관리',
       icon: <InventoryIcon />,
       path: '/buy',
     },

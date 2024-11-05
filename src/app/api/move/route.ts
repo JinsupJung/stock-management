@@ -12,19 +12,20 @@ export const POST = async (req: Request) => {
         const stockCode = formData.get('stock_code') as string;
 
 
+        // 10-17 트리거로 로직 이동
         // 1. Fetch the stock details from TbStoreStock
-        const storeStock = await db.tbStoreStock.findFirst({
-            where: { store_id: fromStoreId, stock_code: stockCode },
-        });
+        // const storeStock = await db.tbStoreStock.findFirst({
+        //     where: { store_id: fromStoreId, stock_code: stockCode },
+        // });
 
-        if (!storeStock) {
-            return new Response(JSON.stringify({ message: 'TbStoreStock stock not found' }), { status: 404 });
-        }
+        // if (!storeStock) {
+        //     return new Response(JSON.stringify({ message: 'TbStoreStock stock not found' }), { status: 404 });
+        // }
 
-        // 2. Check if the moveQty is valid (less than or equal to available stock in Store A)
-        if (moveQty > storeStock.current_qty) {
-            return new Response(JSON.stringify({ message: 'Not enough stock' }), { status: 400 });
-        }
+        // // 2. Check if the moveQty is valid (less than or equal to available stock in Store A)
+        // if (moveQty > storeStock.current_qty) {
+        //     return new Response(JSON.stringify({ message: 'Not enough stock' }), { status: 400 });
+        // }
 
         // 누적 수량 계산 필요
         const newRecord = {
@@ -47,15 +48,12 @@ export const POST = async (req: Request) => {
 
 
 
-        const updateRecord = {
-            id: Number(formData.get('id')),
-            current_qty: Number(formData.get('qty')),
-        };
+        // const updateRecord = {
+        //     id: Number(formData.get('id')),
+        //     current_qty: Number(formData.get('qty')),
+        // };
 
 
-
-        console.log("newRecord.qty, updateRecord.qty =", newRecord.qty, updateRecord.current_qty);
-        console.log("newRecord, updateRecord =", newRecord, updateRecord);
 
 
         // 1. Insert new record
@@ -68,12 +66,12 @@ export const POST = async (req: Request) => {
         });
 
         // 2. Update existing record
-        await db.tbStoreStock.update({
-            where: { id: updateRecord.id },
-            data: {
-                current_qty: updateRecord.current_qty,
-            },
-        });
+        // await db.tbStoreStock.update({
+        //     where: { id: updateRecord.id },
+        //     data: {
+        //         current_qty: updateRecord.current_qty,
+        //     },
+        // });
 
         // Return a JSON response and handle redirection on the frontend
         return new Response(JSON.stringify({ success: true, message: "Success" }), {

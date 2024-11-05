@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: '직영매장 재고관리',
-  description: '직영매장 사입, 매장간 재고이동, 월말재고실사 관리',
+  description: '직영매장 식재료 매입, 매장간 재고이동, 월말재고실사 관리',
 };
 
 

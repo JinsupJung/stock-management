@@ -2,7 +2,7 @@ import React from 'react';
 import { TbStockList } from '@prisma/client';
 import { db } from '@/db';
 import { notFound } from 'next/navigation';
-import StockEditForm from '@/components/StockBuyEditForm';
+import StockBuyEditForm from '@/components/StockBuyEditForm';
 
 interface StockEditPageProps {
   params: {
@@ -47,7 +47,7 @@ export default async function StockEditPage(props: StockEditPageProps) {
     tax_yn: stock.tax_yn,
     specification: stock.specification,
     unit: stock.unit,
-    qty: stock.qty,            // Convert qty
+    qty: stock.qty.toNumber(),
     unit_price: stock.unit_price, // Convert unit_price
     amount: stock.amount,       // Convert amount
     status: stock.status,
@@ -59,7 +59,7 @@ export default async function StockEditPage(props: StockEditPageProps) {
 
   return (
     <>
-      <StockEditForm stock={plainStock} />
+      <StockBuyEditForm stock={plainStock} />
     </>
   );
 }
